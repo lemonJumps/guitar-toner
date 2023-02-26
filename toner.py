@@ -22,7 +22,7 @@ stream = pad.open(
 canvas = numpy.zeros((HEIGHT,WIDTH,3), dtype=numpy.uint8)
 fftHist = numpy.zeros((HEIGHT,WIDTH,3), dtype=numpy.uint8)
 
-mmax = 1000
+mmax = 10000
 
 def draw():
     cv2.imshow("output", canvas)
@@ -30,26 +30,29 @@ def draw():
 
 try:
     while True:
-        data = stream.read(1024)
+        data = stream.read(4086)
 
         fdata = numpy.reshape(numpy.frombuffer(data, dtype=numpy.int32), (-1,2) )
         
         
         cfdata = fdata[:,1]
-        fftdata = numpy.fft.fft(cfdata)
+        rfftdata = numpy.fft.fft(cfdata)
         
-        fftdata = fftdata.real / numpy.iinfo(numpy.int32).max * (HEIGHT/2) +(HEIGHT/2)
+        fftdata = rfftdata.real / numpy.iinfo(numpy.int32).max * (HEIGHT/2) +(HEIGHT/2)
         
         canvas = numpy.zeros((HEIGHT,WIDTH,3), dtype=numpy.uint8)
         
+        # historgam
         fftHist[:,0:WIDTH-1] = fftHist[:,1:WIDTH]
         
-        # print(fftHist[:,4:WIDTH-1].shape)
         
-        # mmax = fftdata.real.max()/2 + mmax/2
+        pop = (numpy.clip(numpy.abs(
+            rfftdata.real[:HEIGHT]/
+            # rfftdata.real[:HEIGHT].max()) * 5, 0, 1)
+            10000000000) * 5, 0, 1)
+            )*255
         
-        pop = (numpy.abs(fftdata.real[:HEIGHT])/mmax)*255
-        fftHist[:,WIDTH-1] = cv2.applyColorMap(pop.astype(numpy.uint8), colormap=cv2.COLORMAP_DEEPGREEN)[:,0]
+        fftHist[:,WIDTH-1] = cv2.applyColorMap(pop.astype(numpy.uint8), colormap=cv2.COLORMAP_OCEAN)[:,0]
         
         canvas[:] = fftHist[:]
         
